@@ -1,18 +1,16 @@
-require "docker"
+require 'docker'
 
-if ENV.key?("DOCKER_HOST")
-  Docker.url = ENV.fetch("DOCKER_HOST")
-end
+Docker.url = ENV.fetch('DOCKER_HOST') if ENV.key?('DOCKER_HOST')
 
 class TestCluster
-  DOCKER_HOST = ENV.fetch("DOCKER_HOST") {
+  DOCKER_HOST = ENV.fetch('DOCKER_HOST') do
     ip = `/sbin/ifconfig docker0 | grep "inet addr" | cut -d ':' -f 2 | cut -d ' ' -f 1`.strip
     "kafka://#{ip}"
-  }
+  end
 
   DOCKER_HOSTNAME = URI(DOCKER_HOST).host
-  KAFKA_IMAGE = "ches/kafka:0.9.0.1"
-  ZOOKEEPER_IMAGE = "jplock/zookeeper:3.4.6"
+  KAFKA_IMAGE = 'ches/kafka:0.10.0.0'.freeze
+  ZOOKEEPER_IMAGE = 'jplock/zookeeper:3.4.6'.freeze
   KAFKA_CLUSTER_SIZE = 3
 
   def start
@@ -20,39 +18,39 @@ class TestCluster
       print "Fetching image #{image}... "
 
       unless Docker::Image.exist?(image)
-        Docker::Image.create("fromImage" => image)
+        Docker::Image.create('fromImage' => image)
       end
 
-      puts "OK"
+      puts 'OK'
     end
 
-    puts "Starting cluster..."
+    puts 'Starting cluster...'
 
     @zookeeper = create(
-      "Image" => ZOOKEEPER_IMAGE,
-      "Hostname" => "localhost",
-      "ExposedPorts" => {
-        "2181/tcp" => {}
-      },
+      'Image' => ZOOKEEPER_IMAGE,
+      'Hostname' => 'localhost',
+      'ExposedPorts' => {
+        '2181/tcp' => {}
+      }
     )
 
-    @kafka_brokers = KAFKA_CLUSTER_SIZE.times.map {|broker_id|
+    @kafka_brokers = KAFKA_CLUSTER_SIZE.times.map do|broker_id|
       port = 9093 + broker_id
 
       create(
-        "Image" => KAFKA_IMAGE,
-        "Hostname" => "localhost",
-        "Links" => ["#{@zookeeper.id}:zookeeper"],
-        "ExposedPorts" => {
-          "9092/tcp" => {}
+        'Image' => KAFKA_IMAGE,
+        'Hostname' => 'localhost',
+        'Links' => ["#{@zookeeper.id}:zookeeper"],
+        'ExposedPorts' => {
+          '9092/tcp' => {}
         },
-        "Env" => [
+        'Env' => [
           "KAFKA_BROKER_ID=#{broker_id}",
           "KAFKA_ADVERTISED_HOST_NAME=#{DOCKER_HOSTNAME}",
-          "KAFKA_ADVERTISED_PORT=#{port}",
+          "KAFKA_ADVERTISED_PORT=#{port}"
         ]
       )
-    }
+    end
 
     @kafka = @kafka_brokers.first
 
@@ -62,19 +60,19 @@ class TestCluster
 
   def start_zookeeper_container
     @zookeeper.start(
-      "PortBindings" => {
-        "2181/tcp" => [{ "HostPort" => "" }]
+      'PortBindings' => {
+        '2181/tcp' => [{ 'HostPort' => '' }]
       }
     )
 
-    config = @zookeeper.json.fetch("NetworkSettings").fetch("Ports")
-    port = config.fetch("2181/tcp").first.fetch("HostPort")
+    config = @zookeeper.json.fetch('NetworkSettings').fetch('Ports')
+    port = config.fetch('2181/tcp').first.fetch('HostPort')
 
     wait_for_port(port)
 
     Thread.new do
-      File.open("zookeeper.log", "a") do |log|
-        @zookeeper.attach do |stream, chunk|
+      File.open('zookeeper.log', 'a') do |log|
+        @zookeeper.attach do |_stream, chunk|
           log.puts(chunk)
         end
       end
@@ -86,14 +84,14 @@ class TestCluster
       port = 9093 + index
 
       kafka.start(
-        "PortBindings" => {
-          "9092/tcp" => [{ "HostPort" => "#{port}/tcp" }]
-        },
+        'PortBindings' => {
+          '9092/tcp' => [{ 'HostPort' => "#{port}/tcp" }]
+        }
       )
 
       Thread.new do
-        File.open("kafka#{index}.log", "a") do |log|
-          kafka.attach do |stream, chunk|
+        File.open("kafka#{index}.log", 'a') do |log|
+          kafka.attach do |_stream, chunk|
             log.puts(chunk)
           end
         end
@@ -104,13 +102,13 @@ class TestCluster
   end
 
   def kafka_hosts
-    @kafka_brokers.map {|kafka|
-      config = kafka.json.fetch("NetworkSettings").fetch("Ports")
-      port = config.fetch("9092/tcp").first.fetch("HostPort")
+    @kafka_brokers.map do|kafka|
+      config = kafka.json.fetch('NetworkSettings').fetch('Ports')
+      port = config.fetch('9092/tcp').first.fetch('HostPort')
       host = DOCKER_HOSTNAME
 
       "#{host}:#{port}"
-    }
+    end
   end
 
   def kill_kafka_broker(number)
@@ -129,30 +127,30 @@ class TestCluster
     print "Creating topic #{topic}... "
 
     kafka_command [
-      "/kafka/bin/kafka-topics.sh",
-      "--create",
+      '/kafka/bin/kafka-topics.sh',
+      '--create',
       "--topic=#{topic}",
       "--replication-factor=#{num_replicas}",
       "--partitions=#{num_partitions}",
-      "--zookeeper=zookeeper",
+      '--zookeeper=zookeeper'
     ]
 
-    puts "OK"
+    puts 'OK'
 
     out = kafka_command [
-      "/kafka/bin/kafka-topics.sh",
-      "--describe",
+      '/kafka/bin/kafka-topics.sh',
+      '--describe',
       "--topic=#{topic}",
-      "--zookeeper=zookeeper",
+      '--zookeeper=zookeeper'
     ]
     puts out
   end
 
   def kafka_command(command)
     container = create(
-      "Image" => KAFKA_IMAGE,
-      "Links" => ["#{@zookeeper.id}:zookeeper"],
-      "Cmd" => command,
+      'Image' => KAFKA_IMAGE,
+      'Links' => ["#{@zookeeper.id}:zookeeper"],
+      'Cmd' => command
     )
 
     begin
@@ -161,27 +159,40 @@ class TestCluster
 
       if status != 0
         puts container.logs(stdout: true, stderr: true)
-        raise "Command failed with status #{status}"
+        fail "Command failed with status #{status}"
       end
 
       container.logs(stdout: true, stderr: true)
     ensure
-      container.delete(force: true) rescue nil
+      begin
+        container.delete(force: true)
+      rescue
+        nil
+      end
     end
   end
 
   def stop
-    puts "Stopping cluster..."
+    puts 'Stopping cluster...'
 
-    @kafka_brokers.each {|kafka| kafka.delete(force: true) rescue nil }
-    @zookeeper.delete(force: true) rescue nil
+    @kafka_brokers.each do|kafka|
+      begin
+                                   kafka.delete(force: true)
+                                 rescue
+                                   nil
+                                 end end
+    begin
+      @zookeeper.delete(force: true)
+    rescue
+      nil
+    end
   end
 
   private
 
   def ensure_kafka_is_ready
     kafka_hosts.each do |host_and_port|
-      host, port = host_and_port.split(":", 2)
+      host, port = host_and_port.split(':', 2)
 
       wait_for_port(port, host: host)
     end
@@ -194,10 +205,10 @@ class TestCluster
       begin
         socket = TCPSocket.open(host, port)
         socket.close
-        puts " OK"
+        puts ' OK'
         break
       rescue
-        print "."
+        print '.'
         sleep 1
       end
     end
