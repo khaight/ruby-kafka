@@ -23,7 +23,7 @@ module Kafka
 
       attr_reader :topics, :throttle_time_ms
 
-      def initialize(topics: [])
+      def initialize(topics: [], throttle_time_ms: 0)
         @topics = topics
         @throttle_time_ms = throttle_time_ms
       end
