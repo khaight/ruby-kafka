@@ -44,6 +44,8 @@ module Kafka
       end
 
       def self.decode(decoder)
+        throttle_time_ms = decoder.int32
+        
         topics = decoder.array do
           topic_name = decoder.string
 
