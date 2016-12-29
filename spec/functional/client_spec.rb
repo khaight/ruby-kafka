@@ -1,5 +1,5 @@
 describe "Producer API", functional: true do
-  let!(:topic) { create_random_topic(num_partitions: 1) }
+  let!(:topic) { create_random_topic(num_partitions: 3) }
 
   example "listing all topics in the cluster" do
     expect(kafka.topics).to include topic
@@ -90,7 +90,34 @@ describe "Producer API", functional: true do
 
     sleep(10) # give some time for the consumers to register
     expect(kafka.list_groups.length).to eq 2
-    
+
+    consumer_1.stop
+    consumer_2.stop
+  end
+
+  example "fetch a description of of a specific group in a cluster" do
+    producer = kafka.producer
+    producer.produce(1.to_s, topic: topic, partition_key: 1.to_s)
+    producer.deliver_messages
+
+
+    consumer_1 = kafka.consumer(group_id: "consumer_1")
+    consumer_1.subscribe(topic)
+    c1 = Thread.new do
+      consumer_1.each_message do |message|
+      end
+    end
+
+    consumer_2 = kafka.consumer(group_id: "consumer_2")
+    consumer_2.subscribe(topic)
+    c2 = Thread.new do
+     consumer_2.each_message do |message|
+     end
+    end
+
+    sleep(10) # give some time for the consumers to register
+    expect(kafka.describe_groups(['consumer_1', 'consumer_2']).length).to eq 2
+
     consumer_1.stop
     consumer_2.stop
   end

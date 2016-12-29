@@ -119,6 +119,23 @@ module Kafka
       raise
     end
 
+    def describe_groups(group_ids:)
+      groups = []
+      cluster_info.brokers.each do |broker_info|
+        begin
+          broker = connect_to_broker(broker_info.node_id)
+          response = broker.describe_groups(group_ids: group_ids)
+          response.groups.each do | group |
+            groups << group if group.error_code == 0
+          end
+        rescue ConnectionError => e
+          @logger.error "Failed to describe groups from #{broker}: #{e}"
+        end
+      end
+      groups
+    end
+
+
     def list_groups
       groups = []
       cluster_info.brokers.each do |broker_info|
@@ -131,7 +148,7 @@ module Kafka
           @logger.error "Failed to get groups info from #{broker}: #{e}"
         end
       end
-      return groups
+      groups
     end
 
     def resolve_offsets(topic, partitions, offset)

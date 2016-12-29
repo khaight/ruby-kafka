@@ -78,6 +78,12 @@ module Kafka
       @connection.send_request(request)
     end
 
+    def describe_groups(**options)
+      request = Protocol::DescribeGroupsRequest.new(**options)
+
+      @connection.send_request(request)
+    end
+
     def list_groups(**options)
       request = Protocol::ListGroupsRequest.new
 

@@ -15,6 +15,7 @@ module Kafka
       12 => :heartbeat,
       13 => :leave_group,
       14 => :sync_group,
+      15 => :describe_groups,
       16 => :list_groups,
     }
 
@@ -86,5 +87,7 @@ require "kafka/protocol/offset_fetch_request"
 require "kafka/protocol/offset_fetch_response"
 require "kafka/protocol/offset_commit_request"
 require "kafka/protocol/offset_commit_response"
+require "kafka/protocol/describe_groups_request"
+require "kafka/protocol/describe_groups_response"
 require "kafka/protocol/list_groups_request"
 require "kafka/protocol/list_groups_response"

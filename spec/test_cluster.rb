@@ -8,12 +8,11 @@ class TestCluster
     "kafka://#{ip}"
   end
 
-  DOCKER_HOSTNAME = "192.168.0.89" #URI(DOCKER_HOST).host
+  DOCKER_HOSTNAME = URI(DOCKER_HOST).host
   KAFKA_IMAGE = 'ches/kafka:0.10.0.0'.freeze
   ZOOKEEPER_IMAGE = 'jplock/zookeeper:3.4.6'.freeze
   KAFKA_CLUSTER_SIZE = 3
 
-  puts "DOCKER_HOSTNAME #{DOCKER_HOSTNAME}"
   def start
     [KAFKA_IMAGE, ZOOKEEPER_IMAGE].each do |image|
       print "Fetching image #{image}... "

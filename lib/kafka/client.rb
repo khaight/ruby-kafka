@@ -394,9 +394,16 @@ module Kafka
       @cluster.partitions_for(topic).count
     end
 
-    # Gets a list of consumer groups
+    # Describes a group in the cluster
     #
     # @return [Hash] a list of all groups in the cluster
+    def describe_groups(group_ids)
+      @cluster.describe_groups(group_ids: group_ids)
+    end
+
+    # Gets a list of consumer groups
+    #
+    # @return [Array] a list of all groups in the cluster
     def list_groups
       @cluster.list_groups
     end
