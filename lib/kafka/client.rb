@@ -394,6 +394,13 @@ module Kafka
       @cluster.partitions_for(topic).count
     end
 
+    # Gets a list of consumer groups
+    #
+    # @return [Hash] a list of all groups in the cluster
+    def list_groups
+      @cluster.list_groups
+    end
+
     # Retrieve the offset of the last message in a partition. If there are no
     # messages in the partition -1 is returned.
     #

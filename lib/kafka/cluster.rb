@@ -119,6 +119,21 @@ module Kafka
       raise
     end
 
+    def list_groups
+      groups = []
+      cluster_info.brokers.each do |broker_info|
+        begin
+          broker = connect_to_broker(broker_info.node_id)
+          response = broker.list_groups
+          Protocol.handle_error(response.error_code)
+          groups += response.groups
+        rescue ConnectionError => e
+          @logger.error "Failed to get groups info from #{broker}: #{e}"
+        end
+      end
+      return groups
+    end
+
     def resolve_offsets(topic, partitions, offset)
       add_target_topics([topic])
       refresh_metadata_if_necessary!

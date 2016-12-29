@@ -15,6 +15,7 @@ module Kafka
       12 => :heartbeat,
       13 => :leave_group,
       14 => :sync_group,
+      16 => :list_groups,
     }
 
     ERRORS = {
@@ -41,6 +42,10 @@ module Kafka
       25 => UnknownMemberId,
       26 => InvalidSessionTimeout,
       27 => RebalanceInProgress,
+      28 => InvalidCommitOffsetSizeCode,
+      29 => TopicAuthorizationFailedCode,
+      30 => GroupAuthorizationFailedCode,
+      31 => ClusterAuthorizationFailedCode,
     }
 
     def self.handle_error(error_code)
@@ -81,3 +86,5 @@ require "kafka/protocol/offset_fetch_request"
 require "kafka/protocol/offset_fetch_response"
 require "kafka/protocol/offset_commit_request"
 require "kafka/protocol/offset_commit_response"
+require "kafka/protocol/list_groups_request"
+require "kafka/protocol/list_groups_response"

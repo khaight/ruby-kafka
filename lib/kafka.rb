@@ -142,6 +142,18 @@ module Kafka
   class FetchError < Error
   end
 
+  class InvalidCommitOffsetSizeCode < Error
+  end
+
+  class TopicAuthorizationFailedCode < Error
+  end
+
+  class GroupAuthorizationFailedCode < Error
+  end
+
+  class ClusterAuthorizationFailedCode < Error
+  end
+
   # Initializes a new Kafka client.
   #
   # @see Client#initialize
